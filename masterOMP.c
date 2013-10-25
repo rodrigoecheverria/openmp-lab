@@ -82,7 +82,7 @@ void f1_vect ( double *x, double r, int N )
 void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
-#pragma omp parallel for default(none) shared(a,b,c)
+#pragma omp parallel for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       for (k=0; k<N; k++) 

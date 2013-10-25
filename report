@@ -1,0 +1,59 @@
+SERIAL--- gcc -Ofast -std=c99 masterOMP.c -o masterOMP_serial.o
+
+Final Result  (N= 2000 ) = 1.673053e+10
+
+ Performance counter stats for './masterOMP_serial.o':
+
+      59319,900183 task-clock                #    0,997 CPUs utilized          
+             6.014 context-switches          #    0,101 K/sec                  
+                 4 CPU-migrations            #    0,000 K/sec                  
+             1.615 page-faults               #    0,027 K/sec                  
+   200.489.665.477 cycles                    #    3,380 GHz                    
+   135.729.852.411 stalled-cycles-frontend   #   67,70% frontend cycles idle   
+    53.522.599.588 stalled-cycles-backend    #   26,70% backend  cycles idle   
+   128.365.997.117 instructions              #    0,64  insns per cycle        
+                                             #    1,06  stalled cycles per insn
+    16.058.918.639 branches                  #  270,717 M/sec                  
+        11.781.398 branch-misses             #    0,07% of all branches        
+
+      59,484964862 seconds time elapsed
+
+SERIAL INTEL icc -Ofast -std=c99 masterOMP.c -o masterOMP_serial_intel.o
+Final Result  (N= 2000 ) = 1.673053e+10
+
+ Performance counter stats for './masterOMP_serial_intel.o':
+
+      10799,284598 task-clock                #    0,997 CPUs utilized          
+             1.095 context-switches          #    0,101 K/sec                  
+                 0 CPU-migrations            #    0,000 K/sec                  
+             1.644 page-faults               #    0,152 K/sec                  
+    36.466.453.875 cycles                    #    3,377 GHz                    
+    18.444.993.877 stalled-cycles-frontend   #   50,58% frontend cycles idle   
+    12.147.265.990 stalled-cycles-backend    #   33,31% backend  cycles idle   
+    38.409.975.326 instructions              #    1,05  insns per cycle        
+                                             #    0,48  stalled cycles per insn
+     2.074.836.234 branches                  #  192,127 M/sec                  
+         9.284.069 branch-misses             #    0,45% of all branches        
+
+      10,830482296 seconds time elapsed
+
+PARALLEL INTEL (FLAG) icc -Ofast -parallel -std=c99 masterOMP.c -o masterOMP_parallelflag_intel.o
+
+Final Result  (N= 2000 ) = 1.672751e+10
+
+ Performance counter stats for './masterOMP_parallelflag_intel.o':
+
+      10254,501306 task-clock                #    7,084 CPUs utilized          
+             1.217 context-switches          #    0,119 K/sec                  
+                11 CPU-migrations            #    0,001 K/sec                  
+             6.379 page-faults               #    0,622 K/sec                  
+    33.262.245.933 cycles                    #    3,244 GHz                    
+    22.583.774.864 stalled-cycles-frontend   #   67,90% frontend cycles idle   
+    10.269.342.972 stalled-cycles-backend    #   30,87% backend  cycles idle   
+    29.472.937.639 instructions              #    0,89  insns per cycle        
+                                             #    0,77  stalled cycles per insn
+       568.274.637 branches                  #   55,417 M/sec                  
+         1.870.341 branch-misses             #    0,33% of all branches        
+
+       1,447574467 seconds time elapsed
+

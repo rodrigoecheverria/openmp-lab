@@ -82,11 +82,23 @@ void f1_vect ( double *x, double r, int N )
 void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
-#pragma omp parallel for
+  double *T;
+  T = (double *) malloc ( N*N*sizeof(double));
+  zero_mat(T,N);
+#pragma omp parallel
+{
+#pragma omp for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
-      for (k=0; k<N; k++) 
-        c[i*N+j] += a[i*N+k] * b[k*N+j];
+        T[i*N+j] = b [j*N+i];
+  
+#pragma omp for 
+  for (i=0; i<N; i++)
+    for (j=0; j<N; j++)
+      for (k=0; k<N; k++)
+        c[i*N+j] += a[i*N+k] * T[j*N+k];//b[k*N+j];
+}
+
 }
 
 void mat_transpose (double *M, int N)

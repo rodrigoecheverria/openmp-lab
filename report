@@ -61,3 +61,64 @@ Final Result  (N= 2000 ) = 1.673053e+10
        4,308926605 seconds time elapsed
 
 ====================================================================================================
+FIRST PARALLELIZATION WITH OPENMP gcc -Ofast -fopenmp -std=c99 masterOMP.c -o masterOMP_parallel_1.o
+commit ba22a83ec334979791f86122324ce16661453172
+Final Result  (N= 2000 ) = 1.673053e+10
+
+ Performance counter stats for './masterOMP_parallel_1.o':
+
+     191375,720680 task-clock                #    1,894 CPUs utilized          
+            43.675 context-switches          #    0,228 K/sec                  
+                49 cpu-migrations            #    0,000 K/sec                  
+            23.625 page-faults               #    0,123 K/sec                  
+   355.942.954.945 cycles                    #    1,860 GHz                    
+   <not supported> stalled-cycles-frontend 
+   <not supported> stalled-cycles-backend  
+   129.594.979.410 instructions              #    0,36  insns per cycle        
+    16.319.544.929 branches                  #   85,275 M/sec                  
+        16.522.895 branch-misses             #    0,10% of all branches        
+
+     101,060973047 seconds time elapsed
+
+=====================================================================================================
+SERIAL IMPROVING CACHE (BY TRANSPOSING) + UNROLLING LOOPS gcc -Ofast -march=native -funroll-loops -std=c99 masterOMP.c -o masterOMP_serial.o
+
+Final Result  (N= 2000 ) = 1.673053e+10
+
+ Performance counter stats for './masterOMP_serial.o':
+
+      39413,153953 task-clock                #    0,998 CPUs utilized          
+             3.416 context-switches          #    0,087 K/sec                  
+                43 cpu-migrations            #    0,001 K/sec                  
+            39.203 page-faults               #    0,995 K/sec                  
+    73.154.814.975 cycles                    #    1,856 GHz                     [50,00%]
+   <not supported> stalled-cycles-frontend 
+   <not supported> stalled-cycles-backend  
+    70.569.424.756 instructions              #    0,96  insns per cycle         [75,00%]
+     2.162.094.789 branches                  #   54,857 M/sec                   [74,99%]
+         8.952.039 branch-misses             #    0,41% of all branches         [75,01%]
+
+      39,489563453 seconds time elapsed
+=====================================================================================================
+PARALLEL WITH OPENMP (INCLUDING TRANSPOSING IN THE PARALLELIZATION)
+gcc -Ofast -march=native -funroll-loops -fopenmp -std=c99 masterOMP.c -o masterOMP_parallel2.o
+
+Final Result  (N= 2000 ) = 1.673053e+10
+
+ Performance counter stats for './masterOMP_parallel2.o':
+
+      48312,999145 task-clock                #    1,890 CPUs utilized          
+             9.865 context-switches          #    0,204 K/sec                  
+                47 cpu-migrations            #    0,001 K/sec                  
+            39.255 page-faults               #    0,813 K/sec                  
+    89.622.808.352 cycles                    #    1,855 GHz                     [49,89%]
+   <not supported> stalled-cycles-frontend 
+   <not supported> stalled-cycles-backend  
+    70.616.682.142 instructions              #    0,79  insns per cycle         [75,02%]
+     2.130.408.725 branches                  #   44,096 M/sec                   [75,06%]
+         9.852.695 branch-misses             #    0,46% of all branches         [75,05%]
+
+      25,559913831 seconds time elapsed
+
+
+

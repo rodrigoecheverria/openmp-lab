@@ -35,7 +35,7 @@ double checksum_vect ( double *const c, int N )
 {
   int i;
   double S= 0.0;
-#pragma omp parallel for
+#pragma omp parallel reduction (x:S)
   for (i=0; i<N; i++)
     S += c[i];
   return S;
@@ -45,7 +45,7 @@ double checksum_mat ( double *const c, int N )
 {
   int i, j;
   double S= 0.0;
-#pragma omp parallel for
+#pragma omp parallel reduction (x:S)
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       S += c[i*N+j];
@@ -106,7 +106,6 @@ void mat_transpose (double *M, int N)
 {
   int j, k;
   double T;
-#pragma omp parallel for
   for (k=0; k<N; k++) 
     for (j=k+1; j<N; j++) {
       T = M[k*N+j];

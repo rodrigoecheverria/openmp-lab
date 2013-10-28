@@ -6,7 +6,7 @@ void init_vect(double *M, int N)
 {
   int j;
   // random numbers in the range [0.5, 1.5)
-
+#pragma omp parallel for
   for (j=0; j<N; j++)
     M[j] = 0.5 + (double)rand()/RAND_MAX;  
 }
@@ -15,7 +15,7 @@ void init_mat(double *M, int N)
 {
   int j, k;
   // random numbers in the range [0.5, 1.5)
-
+#pragma omp parallel for
   for (k=0; k<N; k++) 
     for (j=0; j<N; j++)
       M[k*N+j] = 0.5 + (double)rand()/RAND_MAX;
@@ -24,7 +24,7 @@ void init_mat(double *M, int N)
 void zero_mat(double *M, int N)
 {
   int j, k;
-
+#pragma omp parallel for
   for (k=0; k<N; k++) 
     for (j=0; j<N; j++)
       M[k*N+j] = 0.0;
@@ -35,7 +35,7 @@ double checksum_vect ( double *const c, int N )
 {
   int i;
   double S= 0.0;
-
+#pragma omp parallel for
   for (i=0; i<N; i++)
     S += c[i];
   return S;
@@ -45,7 +45,7 @@ double checksum_mat ( double *const c, int N )
 {
   int i, j;
   double S= 0.0;
-
+#pragma omp parallel for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       S += c[i*N+j];
@@ -55,7 +55,7 @@ double checksum_mat ( double *const c, int N )
 void f1_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
-
+#pragma omp parallel for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       a[i*N+j] = x[i] * y[j];
@@ -64,7 +64,7 @@ void f1_mat ( double *const x, double *const y, double *restrict a, int N )
 void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
-
+#pragma omp parallel for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       a[i+N*j] = x[i] * y[j];
@@ -74,7 +74,7 @@ void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 void f1_vect ( double *x, double r, int N )
 {
   int i;
-
+#pragma omp parallel for
   for (i=0; i<N; i++)
     x[i] = x[i] / r;
 }
@@ -106,7 +106,7 @@ void mat_transpose (double *M, int N)
 {
   int j, k;
   double T;
-
+#pragma omp parallel for
   for (k=0; k<N; k++) 
     for (j=k+1; j<N; j++) {
       T = M[k*N+j];

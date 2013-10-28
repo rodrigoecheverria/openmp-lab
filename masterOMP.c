@@ -64,7 +64,7 @@ void f1_mat ( double *const x, double *const y, double *restrict a, int N )
 void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
-
+#pragma omp parallel for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       a[i+N*j] = x[i] * y[j];

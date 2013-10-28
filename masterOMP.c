@@ -98,6 +98,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
       for (k=0; k<N; k++)
         c[i*N+j] += a[i*N+k] * T[j*N+k];//b[k*N+j];
 }
+  free(T);
 
 }
 

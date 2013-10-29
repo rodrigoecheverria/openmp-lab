@@ -177,19 +177,19 @@ int main (int argc, char **argv)
   B = (double *) _mm_malloc ( N*N*sizeof(double),64);
   C = (double *) _mm_malloc ( N*N*sizeof(double),64);*/
   void *p;
-  posix_memalign(&p,64,N*N*sizeof(double));
+  posix_memalign(&p,64,N*N*sizeof(double)*16);
   A = p;
-  posix_memalign(&p,64,N*N*sizeof(double));
+  posix_memalign(&p,64,N*N*sizeof(double)*16);
   B= p;
-  posix_memalign(&p,64,N*N*sizeof(double));
+  posix_memalign(&p,64,N*N*sizeof(double)*16);
     C= p;
     printf ("malloc ok\n");
   // Dynamic allocation of vectors
   /*X = (double *) _mm_malloc ( N*sizeof(double),64);
   Y = (double *) _mm_malloc ( N*sizeof(double),64);*/
-  posix_memalign(&p,64,N*sizeof(double));
+  posix_memalign(&p,64,N*sizeof(double)*16);
   X = p;
-  posix_memalign(&p,64,N*sizeof(double));
+  posix_memalign(&p,64,N*sizeof(double)*16);
   Y=p;
   // initial seed for random generation
   srand(1);

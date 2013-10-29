@@ -89,9 +89,9 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
-        for(i2=0;i2<SM;++i2)
-          for(j2=0;j2<SM;++j2)
-            for(k2=0;k2<SM;++k2)
+        for(i2=0;i2<SM;i2++)
+          for(j2=0;j2<SM;j2++)
+            for(k2=0;k2<SM;k2++)
               c[i*N+j+j2] += a[i*N+k+k2]*b[k*N+j+j2];
 /*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));

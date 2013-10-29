@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
+#define SM (CLS/sizeof(double))
 
 void init_vect(double *M, int N)
 {
@@ -82,7 +83,17 @@ void f1_vect ( double *x, double r, int N )
 void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
-  double *T;
+  int i2,j2,k2;
+  int *a2, *b2, *c2;
+  
+  for (i=0;i<N; i+=SM)
+    for(j=0;j<N;j+=SM)
+      for(k=0;k<N;k+=SM)
+        for(i2=0;i2<SM;++i2)
+          for(k2=0;k2<SM;++k2)
+            for(j2=0;j2<SM;++j2)
+              c[i*N+j2] += a[i*N+k2]*b[k*N+j2];
+/*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));
   zero_mat(T,N);
 #pragma omp parallel
@@ -97,7 +108,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
     for (j=0; j<N; j++)
       for (k=0; k<N; k++)
         c[i*N+j] += a[i*N+k] * T[j*N+k];//b[k*N+j];
-}
+}*/
 
 }
 

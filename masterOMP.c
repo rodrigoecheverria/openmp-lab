@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
+#define SM (CLS / sizeof(double))
 
 void init_vect(double *M, int N)
 {
   int j;
   // random numbers in the range [0.5, 1.5)
-
   for (j=0; j<N; j++)
     M[j] = 0.5 + (double)rand()/RAND_MAX;  
 }
@@ -15,7 +15,6 @@ void init_mat(double *M, int N)
 {
   int j, k;
   // random numbers in the range [0.5, 1.5)
-
   for (k=0; k<N; k++) 
     for (j=0; j<N; j++)
       M[k*N+j] = 0.5 + (double)rand()/RAND_MAX;
@@ -24,7 +23,6 @@ void init_mat(double *M, int N)
 void zero_mat(double *M, int N)
 {
   int j, k;
-
   for (k=0; k<N; k++) 
     for (j=0; j<N; j++)
       M[k*N+j] = 0.0;
@@ -35,7 +33,6 @@ double checksum_vect ( double *const c, int N )
 {
   int i;
   double S= 0.0;
-
   for (i=0; i<N; i++)
     S += c[i];
   return S;
@@ -45,7 +42,6 @@ double checksum_mat ( double *const c, int N )
 {
   int i, j;
   double S= 0.0;
-
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       S += c[i*N+j];
@@ -55,7 +51,6 @@ double checksum_mat ( double *const c, int N )
 void f1_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
-
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       a[i*N+j] = x[i] * y[j];
@@ -64,7 +59,10 @@ void f1_mat ( double *const x, double *const y, double *restrict a, int N )
 void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
+<<<<<<< HEAD
 #pragma omp parallel for
+=======
+>>>>>>> 2b414c3dcfd8586e63a192f7892c7654c2d79809
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
       a[i+N*j] = x[i] * y[j];
@@ -74,7 +72,6 @@ void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 void f1_vect ( double *x, double r, int N )
 {
   int i;
-
   for (i=0; i<N; i++)
     x[i] = x[i] / r;
 }
@@ -82,22 +79,29 @@ void f1_vect ( double *x, double r, int N )
 void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
-  double *T;
-  T = (double *) malloc ( N*N*sizeof(double));
-  zero_mat(T,N);
+  int i2,j2,k2;
+  int *a2, *b2, *c2;
+  //double *T;
+  //T = (double *) malloc ( N*N*sizeof(double));
+  //zero_mat(T,N);
 #pragma omp parallel
 {
-#pragma omp for
+/*#pragma omp for
   for (i=0; i<N; i++)
     for (j=0; j<N; j++)
         T[i*N+j] = b [j*N+i];
-  
+*/
 #pragma omp for 
-  for (i=0; i<N; i++)
-    for (j=0; j<N; j++)
-      for (k=0; k<N; k++)
-        c[i*N+j] += a[i*N+k] * T[j*N+k];//b[k*N+j];
+  for (i=0; i<N; i+=SM)
+    for (j=0; j<N; j+=SM)
+      for (k=0; k<N; k+=SM)
+          for(i2=0; i2<SM; ++i2)
+            for (k2=0; k2<SM; ++k2)
+              for (j2=0; j2 < SM; ++j2)
+                c[i*N+j2] += a[i*N+k2] * b[k*N+j2];
+                //c2[j2] += a2[k2] * b2[j2];
 }
+//  free(T);
 
 }
 
@@ -105,7 +109,6 @@ void mat_transpose (double *M, int N)
 {
   int j, k;
   double T;
-
   for (k=0; k<N; k++) 
     for (j=k+1; j<N; j++) {
       T = M[k*N+j];

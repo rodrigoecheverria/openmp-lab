@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
+#include <emmintrin.h>
 #define SM (CLS/sizeof(double))
 
 void init_vect(double *M, int N)
@@ -84,15 +85,27 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
   int i2,j2,k2;
-  double *a2, *b2, *c2;
+  double *restrict a2, *restrict b2, *restrict c2;
 #pragma omp parallel for
   for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
+        {
+          _mm_prefetch (&a2[8],_MM_HINT_NTA);
           for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
+          {
+            __m128 m1d = _mm_load_sd(&a2[k2]);
+            m1d=_mm_unpacklo_pd (m1d,m1d);
             for(j2=0;j2<SM;++j2)
-              c2[j2] += a2[k2]*b2[j2];
+            {
+              __m128d m2 = _mm_load_pd(&b2[j2]);
+              __m128d r2 = _mm_load_pd(&c2[j2]);
+              _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d)));
+              //c2[j2] += a2[k2]*b2[j2];
+            }
+          }
+        }
 /*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));
   zero_mat(T,N);

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <omp.h>
 #include <emmintrin.h>
+#include <malloc.h>
 
 #define SM (CLS/sizeof(double))
 
@@ -86,23 +87,36 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
   int i2,j2,k2;
-  double *restrict a2, *restrict b2, *restrict c2;
+  double *restrict a2; 
+  double *restrict b2;
+  double *restrict c2;
 #pragma omp parallel for
   for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
         {
+            printf("first inner\n");
           _mm_prefetch (&a2[8],_MM_HINT_NTA);
           for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
           {
+            printf("second inner\n");
             __m128d m1d = _mm_load_sd(&a2[k2]);
             m1d=_mm_unpacklo_pd (m1d,m1d);
             for(j2=0;j2<SM;++j2)
             {
+                printf("third inner\n");
+                printf("Pointer: %p\n", &b2[j2]);
+                printf("Double: %f\n", b2[j2]);
+                printf("Pointer: %p\n", &b2[j2+1]);
+                printf("Double: %f\n", b2[j2+1]);
+                
               __m128d m2 = _mm_load_pd(&b2[j2]);
+              printf("first load\n");
               __m128d r2 = _mm_load_pd(&c2[j2]);
+              printf("second load\n");
               _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
+              printf("store\n");
               //c2[j2] += a2[k2]*b2[j2];
             }
           }
@@ -144,6 +158,7 @@ void mat_transpose (double *M, int N)
 int main (int argc, char **argv)
 {
   int N=2000;
+  printf("before attr\n");
   double *A __attribute__ ((aligned(64))); 
   double *B __attribute__ ((aligned(64)));
   double *C __attribute__ ((aligned(64)));
@@ -158,14 +173,24 @@ int main (int argc, char **argv)
   }
 
   // dynamic allocation of 2-D matrices
-  A = (double *) malloc ( N*N*sizeof(double));
-  B = (double *) malloc ( N*N*sizeof(double));
-  C = (double *) malloc ( N*N*sizeof(double));
-
+  /*A = (double *) _mm_malloc ( N*N*sizeof(double),64);
+  B = (double *) _mm_malloc ( N*N*sizeof(double),64);
+  C = (double *) _mm_malloc ( N*N*sizeof(double),64);*/
+  void *p;
+  posix_memalign(&p,64,N*N*sizeof(double));
+  A = p;
+  posix_memalign(&p,64,N*N*sizeof(double));
+  B= p;
+  posix_memalign(&p,64,N*N*sizeof(double));
+    C= p;
+    printf ("malloc ok\n");
   // Dynamic allocation of vectors
-  X = (double *) malloc ( N*sizeof(double));
-  Y = (double *) malloc ( N*sizeof(double));
-  
+  /*X = (double *) _mm_malloc ( N*sizeof(double),64);
+  Y = (double *) _mm_malloc ( N*sizeof(double),64);*/
+  posix_memalign(&p,64,N*sizeof(double));
+  X = p;
+  posix_memalign(&p,64,N*sizeof(double));
+  Y=p;
   // initial seed for random generation
   srand(1);
 
@@ -188,7 +213,7 @@ int main (int argc, char **argv)
 
   // Output a single value
   printf("Final Result  (N= %d ) = %e\n", N, R);
-
+//TODO SOLVE
   free (A);  free (B);  free (C);  free (X);  free (Y);
   return 0;
 }

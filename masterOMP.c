@@ -85,11 +85,10 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   int i, j, k;
   int i2,j2,k2;
   double *a2, *b2, *c2;
-  
+#pragma omp parallel for
   for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
-#pragma omp parallel for
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
           for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
             for(j2=0;j2<SM;++j2)

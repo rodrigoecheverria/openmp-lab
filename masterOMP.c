@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <omp.h>
 #include <emmintrin.h>
+
 #define SM (CLS/sizeof(double))
 
 void init_vect(double *M, int N)
@@ -142,7 +143,12 @@ void mat_transpose (double *M, int N)
 int main (int argc, char **argv)
 {
   int N=2000;
-  double *A, *B, *C, *X, *Y, R;
+  double *A __attribute__ ((aligned(64))); 
+  double *B __attribute__ ((aligned(64)));
+  double *C __attribute__ ((aligned(64)));
+  double *X __attribute__ ((aligned(64)));
+  double *Y __attribute__ ((aligned(64)));
+  double R;
 
   if (argc>1) {  N  = atoll(argv[1]); }
   if (N<1 || N>20000) {

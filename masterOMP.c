@@ -176,15 +176,15 @@ int main (int argc, char **argv)
   /*A = (double *) _mm_malloc ( N*N*sizeof(double),64);
   B = (double *) _mm_malloc ( N*N*sizeof(double),64);
   C = (double *) _mm_malloc ( N*N*sizeof(double),64);*/
-  posix_memalign((void**)&A,64,N*N*sizeof(double));
-  posix_memalign((void**)&B,64,N*N*sizeof(double));
-  posix_memalign((void**)&C,64,N*N*sizeof(double));
+  posix_memalign((void**)&A,16,N*N*sizeof(double));
+  posix_memalign((void**)&B,16,N*N*sizeof(double));
+  posix_memalign((void**)&C,16,N*N*sizeof(double));
   printf ("malloc ok\n");
   // Dynamic allocation of vectors
   /*X = (double *) _mm_malloc ( N*sizeof(double),64);
   Y = (double *) _mm_malloc ( N*sizeof(double),64);*/
-  posix_memalign((void**)&X,64,N*sizeof(double));
-  posix_memalign((void**)&Y,64,N*sizeof(double));
+  posix_memalign((void**)&X,16,N*sizeof(double));
+  posix_memalign((void**)&Y,16,N*sizeof(double));
   // initial seed for random generation
   srand(1);
 

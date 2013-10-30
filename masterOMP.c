@@ -136,7 +136,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 //LAST ITERATION OF i UNROLLED (i = N-SM )
 i = N2; //The value of i is unknown at this point if multithreaded(it was a private variable)
 
-#pragma omp for private(j,k,i2,j2,k2,a2,b2,c2,m2,r2,m1d)
+#pragma omp for private(j,k,i2,j2,k2,a2,b2,c2)
 for(j=0;j<N;j+=SM)
   for(k=0;k<N;k+=SM)
     for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)

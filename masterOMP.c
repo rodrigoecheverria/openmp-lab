@@ -111,11 +111,11 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
                 printf("First pointer: %p\n", &b2[j2]);
                 printf("Second pointer: %p\n", &b2[j2+1]);
                 printf("Third pointer: %p\n", &b2[j2+2]);*/
-              if(i*N+j+j2 < N * N)
+              if((i*N+j+j2) < (N * N))
                 __m128d m2 = _mm_load_pd(&b2[j2]);
-              if(i*N+j+j2 < N * N)
+              if((i*N+j+j2) < (N * N))
                 __m128d r2 = _mm_load_pd(&c2[j2]);
-              if(i*N+j+j2 < N * N)
+              if((i*N+j+j2) < (N * N))
                 _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
               
               //c2[j2] += a2[k2]*b2[j2];

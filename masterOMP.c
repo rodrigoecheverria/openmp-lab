@@ -181,7 +181,7 @@ void mat_transpose (double *M, int N)
 int main (int argc, char **argv)
 {
   int N=2000,ok=0;
-  int N_pad;
+  int N_pad,padding;
   double *A, *B, *C, *X, *Y, R; 
 
   if (argc>1) {  N  = atoll(argv[1]); }

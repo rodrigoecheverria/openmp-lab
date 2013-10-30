@@ -132,7 +132,7 @@ for(j=0;j<N-SM;j+=SM)
     }
 //LAST ITERATION OF j unrolled (i = N-SM) && (j = N- SM)
 #pragma omp for
-  for(k=0;k<N-SM;k+=SM)
+  for(k=0;k<N;k+=SM)
     for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
     {
       _mm_prefetch (&a2[8],_MM_HINT_NTA);
@@ -142,14 +142,18 @@ for(j=0;j<N-SM;j+=SM)
         m1d=_mm_unpacklo_pd (m1d,m1d);
         for(j2=0;j2<SM;j2+=2)
         {
-            __m128d m2 = _mm_load_pd(&b2[j2]);
-            __m128d r2 = _mm_load_pd(&c2[j2]);
+          __m128d m2,r2;
+          if ((i*N + j+ j2) < (N*N))
+          {
+            m2 = _mm_load_pd(&b2[j2]);
+            r2 = _mm_load_pd(&c2[j2]);
             _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
+          }
         }
       }
     }
-  int gsdfs = 0;
-//LAST ITERATION OF k unrolled (i = N-SM) && (j = N- SM) && (k = N- SM)
+
+/*//LAST ITERATION OF k unrolled (i = N-SM) && (j = N- SM) && (k = N- SM)
 #pragma omp for
   for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
   {
@@ -169,7 +173,7 @@ for(j=0;j<N-SM;j+=SM)
         }
       }
     }
-  }
+  }*/
 
 }
 /*  double *T;

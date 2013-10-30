@@ -90,10 +90,9 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   double *restrict a2; 
   double *restrict b2;
   double *restrict c2;
-#pragma omp parallel 
-{
-#pragma omp for
-  for (i=0;i<N-SM; i+=SM)
+  int N2 = N-SM;
+#pragma omp parallel for
+  for (i=0;i<N2; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
@@ -111,8 +110,8 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
             }
           }
         }
+printf ("START LAST ITERATION--------------------------------------")
 //LAST ITERATION OF i UNROLLED (i = N-SM )
-//#pragma omp for
 for(j=0;j<N;j+=SM)
   for(k=0;k<N;k+=SM)
     for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
@@ -134,7 +133,6 @@ for(j=0;j<N;j+=SM)
         }
       }
     }
-}
 /*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));
   zero_mat(T,N);
@@ -171,32 +169,21 @@ void mat_transpose (double *M, int N)
 //////// MAIN ////////////
 int main (int argc, char **argv)
 {
-  int N=2000;
-  printf("before attr\n");
-  double *A; 
-  double *B;
-  double *C;
-  double *X;
-  double *Y;
-  double R;
-  int ok = 0;
+  int N=2000,ok=0;
+  double *A, *B, *C, *X. *Y, R; 
+
   if (argc>1) {  N  = atoll(argv[1]); }
   if (N<1 || N>20000) {
      printf("input parameter: N (1-20000)\n");
      return 0;
   }
 
-  // dynamic allocation of 2-D matrices
-  /*A = (double *) _mm_malloc ( N*N*sizeof(double),64);
-  B = (double *) _mm_malloc ( N*N*sizeof(double),64);
-  C = (double *) _mm_malloc ( N*N*sizeof(double),64);*/
+  // Dynamic allocation of 2-D matrices (aligned)
   ok += posix_memalign((void**)&A,64,N*N*sizeof(double));
   ok += posix_memalign((void**)&B,64,N*N*sizeof(double));
   ok += posix_memalign((void**)&C,64,N*N*sizeof(double));
-  printf ("malloc ok\n");
-  // Dynamic allocation of vectors
-  /*X = (double *) _mm_malloc ( N*sizeof(double),64);
-  Y = (double *) _mm_malloc ( N*sizeof(double),64);*/
+  
+  // Dynamic allocation of vectors (aligned)
   ok += posix_memalign((void**)&X,64,N*sizeof(double));
   ok += posix_memalign((void**)&Y,64,N*sizeof(double));
   

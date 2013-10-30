@@ -169,7 +169,7 @@ void mat_transpose (double *M, int N)
   for (k=0; k<N; k+=SM) 
     for (j=1; j<N; j+=SM) 
       for(k2=k;k2<k+SM;++k2)
-        for(j2=j;j2<j+SM;++j2)
+        for(j2=j;j2<j+SM-1;++j2)
         {
           T = M[k2*N+j2];
           M[k2*N+j2] = M[j2*N+k2];

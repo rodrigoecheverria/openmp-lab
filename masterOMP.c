@@ -92,8 +92,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   double *restrict c2;
 #pragma omp parallel for
   for (i=0;i<N; i+=SM){
-    if (i == N - 2 * SM)
-      printf ("ok\n");
+      printf ("i: %d\n",i);
       
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)

@@ -1,25 +1,34 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
-#include <emmintrin.h>
-#include <malloc.h>
+#include <emmintrin.h> //intrinsics
 
+/**
+ * Number of doubles in a cache line
+ * @see mult_mat
+ */
 #define SM (CLS/sizeof(double))
 
+/**
+ * Cannot use openMP (rand() calls cannot be reordered)
+ */
 void init_vect(double *M, int N)
 {
   int j;
+  
   // random numbers in the range [0.5, 1.5)
-
   for (j=0; j<N; j++)
     M[j] = 0.5 + (double)rand()/RAND_MAX;  
 }
 
+/**
+ * Cannot use openMP (rand() calls cannot be reordered)
+ */
 void init_mat(double *M, int N)
 {
   int j, k;
+  
   // random numbers in the range [0.5, 1.5)
-
   for (k=0; k<N; k++) 
     for (j=0; j<N; j++)
       M[k*N+j] = 0.5 + (double)rand()/RAND_MAX;
@@ -64,7 +73,10 @@ void f1_mat ( double *const x, double *const y, double *restrict a, int N )
     for (j=0; j<N; j++)
       a[i*N+j] = x[i] * y[j];
 }
-
+/**
+ * Simple openMP pragma for parallelizing the outer loop
+ * (this was the second hot spot with a big difference)
+ */
 void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
@@ -83,18 +95,25 @@ void f1_vect ( double *x, double r, int N )
     x[i] = x[i] / r;
 }
 
+/**
+ * MAIN HOTSPOT: ~98% of execution time. Optimizations:
+ * 1. Loop unrolling/tiling using the caché line size to optimize caché usage
+ * 2. Intrinsics to improve caché usage and benefit from SIMD (__mm_<add,mul,load>_pd)
+ * 3. Separate the last iteration to reduce the branch misses of the inner-most if 
+ * (only true in the very last iteration)
+ * 4. Reuse of the threads in parallel section
+ */
 void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
   int i2,j2,k2;
-  double *restrict a2; 
-  double *restrict b2;
-  double *restrict c2;
-  int N2 = N-SM;
+  double *restrict a2, *restrict b2, *restrict c2; 
+  int N2 = N-SM; //One iteration less
+  
 #pragma omp parallel 
 {
 #pragma omp for private(i,j,k,i2,j2,k2,a2,b2,c2)
-  for (i=0;i<N; i+=SM)
+  for (i=0;i<N2; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
@@ -107,19 +126,15 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
             
             for(j2=0;j2<SM;j2+=2)
             {
-              __m128d m2,r2;
-              if ((i*N + j+ j2) < (N*N))
-              {
-                m2 = _mm_load_pd(&b2[j2]);
-                r2 = _mm_load_pd(&c2[j2]);
+                __m128d m2 = _mm_load_pd(&b2[j2]);
+                __m128d r2 = _mm_load_pd(&c2[j2]);
                 _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
-              }
             }
           }
         }
-}
-/*//LAST ITERATION OF i UNROLLED (i = N-SM )
-i = N2; //The value of i is unknown at this point if multithreaded
+
+//LAST ITERATION OF i UNROLLED (i = N-SM )
+i = N2; //The value of i is unknown at this point if multithreaded(it was a private variable)
 
 #pragma omp for default(none) shared(i,N,SM,N2) private(j,k,i2,j2,k2,a2,b2,c2,m2,r2,m1d)
 for(j=0;j<N;j+=SM)
@@ -143,25 +158,7 @@ for(j=0;j<N;j+=SM)
         }
       }
     }
-}*/
-/*  double *T;
-  T = (double *) malloc ( N*N*sizeof(double));
-  zero_mat(T,N);
-#pragma omp parallel
-{
-#pragma omp for
-  for (i=0; i<N; i++)
-    for (j=0; j<N; j++)
-        T[i*N+j] = b [j*N+i];
-  
-#pragma omp for 
-  for (i=0; i<N; i++)
-    for (j=0; j<N; j++)
-      for (k=0; k<N; k++)
-        c[i*N+j] += a[i*N+k] * T[j*N+k];//b[k*N+j];
 }
-//  free(T);*/
-
 }
 
 void mat_transpose (double *M, int N)

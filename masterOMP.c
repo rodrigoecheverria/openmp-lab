@@ -12,13 +12,16 @@
 /**
  * Cannot use openMP (rand() calls cannot be reordered)
  */
-void init_vect(double *M, int N)
+void init_vect(double *M, int N, int padding)
 {
   int j;
   
   // random numbers in the range [0.5, 1.5)
   for (j=0; j<N; j++)
-    M[j] = 0.5 + (double)rand()/RAND_MAX;  
+    M[j] = 0.5 + (double)rand()/RAND_MAX;
+    
+  for (j=1; j<padding; j++)
+    M[N+j] = 0.0;
 }
 
 /**
@@ -29,7 +32,7 @@ void init_mat(double *M, int N)
   int j, k;
   
   // random numbers in the range [0.5, 1.5)
-  for (k=0; k<N; k++) 
+  for (k=0; k<N; k++)
     for (j=0; j<N; j++)
       M[k*N+j] = 0.5 + (double)rand()/RAND_MAX;
 }
@@ -178,6 +181,7 @@ void mat_transpose (double *M, int N)
 int main (int argc, char **argv)
 {
   int N=2000,ok=0;
+  int N_pad;
   double *A, *B, *C, *X, *Y, R; 
 
   if (argc>1) {  N  = atoll(argv[1]); }
@@ -185,15 +189,19 @@ int main (int argc, char **argv)
      printf("input parameter: N (1-20000)\n");
      return 0;
   }
+  
+  padding = (N % SM != 0) ? SM - (N % SM) : 0;
+  N_pad = N + padding;
+  printf ("Padded value: %d\n",N_pad);
 
   // Dynamic allocation of 2-D matrices (aligned)
-  ok += posix_memalign((void**)&A,64,N*N*sizeof(double));
-  ok += posix_memalign((void**)&B,64,N*N*sizeof(double));
-  ok += posix_memalign((void**)&C,64,N*N*sizeof(double));
+  ok += posix_memalign((void**)&A,64,N_pad*N_pad*sizeof(double));
+  ok += posix_memalign((void**)&B,64,N_pad*N_pad*sizeof(double));
+  ok += posix_memalign((void**)&C,64,N_pad*N_pad*sizeof(double));
   
   // Dynamic allocation of vectors (aligned)
-  ok += posix_memalign((void**)&X,64,N*sizeof(double));
-  ok += posix_memalign((void**)&Y,64,N*sizeof(double));
+  ok += posix_memalign((void**)&X,64,N_pad*sizeof(double));
+  ok += posix_memalign((void**)&Y,64,N_pad*sizeof(double));
   
   if (ok > 0)
   {
@@ -204,21 +212,21 @@ int main (int argc, char **argv)
   srand(1);
 
   // Initialize input data with random data
-  init_vect (X, N);
-  init_vect (Y, N);
+  init_vect (X, N, padding); //Init the first N elements only
+  init_vect (Y, N, padding); //Init the first N elements only
   R=0.0;
 
   // Main computation
-  f1_mat        (X, Y, A, N);
-  f2_mat        (X, Y, B, N);
-  R +=          checksum_vect (Y, N);
-  f1_vect       (X, R, N);
-  R +=          checksum_vect (X, N);
+  f1_mat        (X, Y, A, N_pad);
+  f2_mat        (X, Y, B, N_pad);
+  R +=          checksum_vect (Y, N_pad);
+  f1_vect       (X, R, N_pad);
+  R +=          checksum_vect (X, N_pad);
   zero_mat      (C, N);
-  mult_mat      (A, B, C, N);
-  mat_transpose (B, N);
-  mult_mat      (B, A, C, N); 
-  R +=          checksum_mat(C, N);
+  mult_mat      (A, B, C, N_pad);
+  mat_transpose (B, N_pad);
+  mult_mat      (B, A, C, N_pad); 
+  R +=          checksum_mat(C, N_pad);
 
   // Output a single value
   printf("Final Result  (N= %d ) = %e\n", N, R);

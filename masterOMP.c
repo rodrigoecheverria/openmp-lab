@@ -117,6 +117,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
             }
           }
         }
+}
 /*//LAST ITERATION OF i UNROLLED (i = N-SM )
 i = N2; //The value of i is unknown at this point if multithreaded
 

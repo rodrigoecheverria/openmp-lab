@@ -102,6 +102,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
           {
             //printf("second inner\n");
             __m128d m1d = _mm_load_sd(&a2[k2]);
+            printf("ok load a2\n");
             m1d=_mm_unpacklo_pd (m1d,m1d);
             for(j2=0;j2<SM;j2+=2)
             {

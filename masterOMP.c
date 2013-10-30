@@ -165,9 +165,9 @@ void mat_transpose (double *M, int N)
 {
   int j, k, j2, k2;
   double T;
-#pragma omp parallel for private(k,j,k2,j2)
+#pragma omp parallel for private(k,j,k2,j2,T)
   for (k=0; k<N; k+=SM) 
-    for (j=0; j<N; j+=SM) 
+    for (j=1; j<N; j+=SM) 
       for(k2=k;k2<k+SM;++k2)
         for(j2=j;j2<j+SM;++j2)
         {

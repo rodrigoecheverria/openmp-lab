@@ -161,7 +161,7 @@ for(j=0;j<N;j+=SM)
 }
 }
 
-void mat_transpose (double *M, int N)
+void mat_transpose (double *restrict M, int N)
 {
   int j, k, j2, k2;
   double T;

@@ -111,7 +111,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
           }
         }
 printf ("START LAST ITERATION--------------------------------------\n");
-//LAST ITERATION OF i UNROLLED (i = N-SM )
+/*//LAST ITERATION OF i UNROLLED (i = N-SM )
 i = N2; //The value of i is unknown at this point if multithreaded
 for(j=0;j<N;j+=SM)
   for(k=0;k<N;k+=SM)
@@ -134,6 +134,7 @@ for(j=0;j<N;j+=SM)
         }
       }
     }
+*/
 /*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));
   zero_mat(T,N);

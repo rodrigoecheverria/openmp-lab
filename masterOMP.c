@@ -27,14 +27,23 @@ void init_vect(double *M, int N, int padding)
 /**
  * Cannot use openMP (rand() calls cannot be reordered)
  */
-void init_mat(double *M, int N)
+void init_mat(double *M, int N, int padding)
 {
   int j, k;
   
   // random numbers in the range [0.5, 1.5)
   for (k=0; k<N; k++)
+  {
     for (j=0; j<N; j++)
       M[k*N+j] = 0.5 + (double)rand()/RAND_MAX;
+    //padding columns
+    for (j = N; j < N + padding; j++)
+      M[k*N+j] = 0.0;
+  }
+  //padding rows
+  for (k=N; k<N+padding; k++)
+    for (j = 0; j < N + padding; j++)
+      M[k*N+j] = 0.0;
 }
 
 void zero_mat(double *M, int N)

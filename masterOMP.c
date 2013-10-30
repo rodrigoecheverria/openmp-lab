@@ -112,6 +112,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
         }
 printf ("START LAST ITERATION--------------------------------------")
 //LAST ITERATION OF i UNROLLED (i = N-SM )
+i = N2; //The value of i is unknown at this point if multithreaded
 for(j=0;j<N;j+=SM)
   for(k=0;k<N;k+=SM)
     for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
@@ -170,7 +171,7 @@ void mat_transpose (double *M, int N)
 int main (int argc, char **argv)
 {
   int N=2000,ok=0;
-  double *A, *B, *C, *X. *Y, R; 
+  double *A, *B, *C, *X, *Y, R; 
 
   if (argc>1) {  N  = atoll(argv[1]); }
   if (N<1 || N>20000) {

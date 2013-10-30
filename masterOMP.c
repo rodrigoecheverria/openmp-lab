@@ -94,11 +94,13 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
+      {
+        printf("ok load a2\n");
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
         {
             //printf("first inner\n");
           _mm_prefetch (&a2[8],_MM_HINT_NTA);
-          printf("ok load a2\n");
+          
           for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
           {
             //printf("second inner\n");
@@ -121,6 +123,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
             }
           }
         }
+      }
 /*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));
   zero_mat(T,N);

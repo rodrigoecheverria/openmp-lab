@@ -91,7 +91,10 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   double *restrict b2;
   double *restrict c2;
 #pragma omp parallel for
-  for (i=0;i<N; i+=SM)
+  for (i=0;i<N; i+=SM){
+    if (i == N - 2 * SM)
+      printf ("ok\n");
+      
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
       {
@@ -123,7 +126,7 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
           }
         }
       }
-      
+  }
       printf("fin fun");
 /*  double *T;
   T = (double *) malloc ( N*N*sizeof(double));

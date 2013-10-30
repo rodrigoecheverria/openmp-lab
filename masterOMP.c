@@ -106,10 +106,9 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
             for(j2=0;j2<SM;++j2)
             {
                 printf("third inner\n");
-                printf("Pointer: %p\n", &b2[j2]);
-                printf("Double: %f\n", b2[j2]);
-                printf("Pointer: %p\n", &b2[j2+1]);
-                printf("Double: %f\n", b2[j2+1]);
+                printf("First pointer: %p\n", &b2[j2]);
+                printf("Second pointer: %p\n", &b2[j2+1]);
+                printf("Third pointer: %p\n", &b2[j2+2]);
                 
               __m128d m2 = _mm_load_pd(&b2[j2]);
               printf("first load\n");

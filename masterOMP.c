@@ -148,6 +148,7 @@ for(j=0;j<N-SM;j+=SM)
         }
       }
     }
+  int gsdfs = 0;
 //LAST ITERATION OF k unrolled (i = N-SM) && (j = N- SM) && (k = N- SM)
 #pragma omp for
   for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)

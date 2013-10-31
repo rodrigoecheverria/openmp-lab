@@ -120,12 +120,10 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
   int i, j, k;
   int i2,j2,k2;
   double *restrict a2, *restrict b2, *restrict c2; 
-  int N2 = N-SM; //One iteration less
+  //int N2 = N-SM; //One iteration less
   
-#pragma omp parallel 
-{
-#pragma omp for private(i,j,k,i2,j2,k2,a2,b2,c2)
-  for (i=0;i<N2; i+=SM)
+#pragma omp parallel for
+  for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
         for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
@@ -138,46 +136,22 @@ void mult_mat ( double *const a, double *const b, double *restrict c, int N )
             
             for(j2=0;j2<SM;j2+=2)
             {
-                __m128d m2 = _mm_load_pd(&b2[j2]);
-                __m128d r2 = _mm_load_pd(&c2[j2]);
+              __m128d m2,r2;
+              if ((i*N + j+ j2) < (N*N))
+              {
+                m2 = _mm_load_pd(&b2[j2]);
+                r2 = _mm_load_pd(&c2[j2]);
                 _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
+              }
             }
           }
-        }
-
-//LAST ITERATION OF i UNROLLED (i = N-SM )
-i = N2; //The value of i is unknown at this point if multithreaded(it was a private variable)
-
-#pragma omp for private(j,k,i2,j2,k2,a2,b2,c2)
-for(j=0;j<N;j+=SM)
-  for(k=0;k<N;k+=SM)
-    for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
-    {
-      _mm_prefetch (&a2[8],_MM_HINT_NTA);
-      for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
-      {
-        __m128d m1d = _mm_load_sd(&a2[k2]);
-        m1d=_mm_unpacklo_pd (m1d,m1d);
-        for(j2=0;j2<SM;j2+=2)
-        {
-          __m128d m2,r2;
-          if ((i*N + j+ j2) < (N*N))
-          {
-            m2 = _mm_load_pd(&b2[j2]);
-            r2 = _mm_load_pd(&c2[j2]);
-            _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
-          }
-        }
       }
-    }
-}
 }
 
 void mat_transpose (double *M, int N)
 {
   int j, k;
   double T;
-#pragma omp parallel for private(k,j,T)
  for (k=0; k<N; k++) 
     for (j=k+1; j<N; j++) {
       T = M[k*N+j];

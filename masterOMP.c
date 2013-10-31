@@ -1,49 +1,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
-#include <emmintrin.h> //intrinsics
-
-/**
- * Number of doubles in a cache line
- * @see mult_mat
- */
 #define SM (CLS/sizeof(double))
 
-/**
- * Cannot use openMP (rand() calls cannot be reordered)
- */
-void init_vect(double *M, int N, int padding)
+void init_vect(double *M, int N)
 {
   int j;
-  
   // random numbers in the range [0.5, 1.5)
+
   for (j=0; j<N; j++)
-    M[j] = 0.5 + (double)rand()/RAND_MAX;
-    
-  for (j=1; j<padding; j++)
-    M[N+j] = 0.0;
+    M[j] = 0.5 + (double)rand()/RAND_MAX;  
 }
 
-/**
- * Cannot use openMP (rand() calls cannot be reordered)
- */
-void init_mat(double *M, int N, int padding)
+void init_mat(double *M, int N)
 {
   int j, k;
-  
   // random numbers in the range [0.5, 1.5)
-  for (k=0; k<N; k++)
-  {
+
+  for (k=0; k<N; k++) 
     for (j=0; j<N; j++)
       M[k*N+j] = 0.5 + (double)rand()/RAND_MAX;
-    //padding columns
-    for (j = N; j < N + padding; j++)
-      M[k*N+j] = 0.0;
-  }
-  //padding rows
-  for (k=N; k<N+padding; k++)
-    for (j = 0; j < N + padding; j++)
-      M[k*N+j] = 0.0;
 }
 
 void zero_mat(double *M, int N)
@@ -85,10 +61,7 @@ void f1_mat ( double *const x, double *const y, double *restrict a, int N )
     for (j=0; j<N; j++)
       a[i*N+j] = x[i] * y[j];
 }
-/**
- * Simple openMP pragma for parallelizing the outer loop
- * (this was the second hot spot with a big difference)
- */
+
 void f2_mat ( double *const x, double *const y, double *restrict a, int N )
 {
   int i, j;
@@ -107,78 +80,44 @@ void f1_vect ( double *x, double r, int N )
     x[i] = x[i] / r;
 }
 
-/**
- * MAIN HOTSPOT: ~98% of execution time. Optimizations:
- * 1. Loop unrolling/tiling using the caché line size to optimize caché usage
- * 2. Intrinsics to improve caché usage and benefit from SIMD (__mm_<add,mul,load>_pd)
- * 3. Separate the last iteration to reduce the branch misses of the inner-most if 
- * (only true in the very last iteration)
- * 4. Reuse of the threads in parallel section
- */
 void mult_mat ( double *const a, double *const b, double *restrict c, int N )
 {
   int i, j, k;
   int i2,j2,k2;
-  double *restrict a2, *restrict b2, *restrict c2; 
-  int N2 = N-SM; //One iteration less
+  int *a2, *b2, *c2;
   
-#pragma omp parallel 
-{
-#pragma omp for private(i,j,k,i2,j2,k2,a2,b2,c2)
-  for (i=0;i<N2; i+=SM)
+  for (i=0;i<N; i+=SM)
     for(j=0;j<N;j+=SM)
       for(k=0;k<N;k+=SM)
-        for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
-        {
-          _mm_prefetch (&a2[8],_MM_HINT_NTA);
-          for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
-          {
-            __m128d m1d = _mm_load_sd(&a2[k2]);
-            m1d=_mm_unpacklo_pd (m1d,m1d);
-            
-            for(j2=0;j2<SM;j2+=2)
-            {
-                __m128d m2 = _mm_load_pd(&b2[j2]);
-                __m128d r2 = _mm_load_pd(&c2[j2]);
-                _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
-            }
-          }
-        }
+        for(i2=0;i2<SM;++i2)
+          for(k2=0;k2<SM;++k2)
+            for(j2=0;j2<SM;++j2)
+              c[i*N+j2] += a[i*N+k2]*b[k*N+j2];
+/*  double *T;
+  T = (double *) malloc ( N*N*sizeof(double));
+  zero_mat(T,N);
+#pragma omp parallel
+{
+#pragma omp for
+  for (i=0; i<N; i++)
+    for (j=0; j<N; j++)
+        T[i*N+j] = b [j*N+i];
+  
+#pragma omp for 
+  for (i=0; i<N; i++)
+    for (j=0; j<N; j++)
+      for (k=0; k<N; k++)
+        c[i*N+j] += a[i*N+k] * T[j*N+k];//b[k*N+j];
+}*/
 
-//LAST ITERATION OF i UNROLLED (i = N-SM )
-i = N2; //The value of i is unknown at this point if multithreaded(it was a private variable)
-
-#pragma omp for private(j,k,i2,j2,k2,a2,b2,c2)
-for(j=0;j<N;j+=SM)
-  for(k=0;k<N;k+=SM)
-    for(i2=0,c2=&c[i*N+j],a2=&a[i*N+k];i2<SM;++i2,c2+=N,a2+=N)
-    {
-      _mm_prefetch (&a2[8],_MM_HINT_NTA);
-      for(k2=0,b2=&b[k*N+j];k2<SM;++k2,b2+=N)
-      {
-        __m128d m1d = _mm_load_sd(&a2[k2]);
-        m1d=_mm_unpacklo_pd (m1d,m1d);
-        for(j2=0;j2<SM;j2+=2)
-        {
-          __m128d m2,r2;
-          if ((i*N + j+ j2) < (N*N))
-          {
-            m2 = _mm_load_pd(&b2[j2]);
-            r2 = _mm_load_pd(&c2[j2]);
-            _mm_store_pd (&c2[j2],_mm_add_pd (_mm_mul_pd(m2,m1d),r2));
-          }
-        }
-      }
-    }
-}
 }
 
 void mat_transpose (double *M, int N)
 {
   int j, k;
   double T;
-#pragma omp parallel for private(k,j,T)
- for (k=0; k<N; k++) 
+
+  for (k=0; k<N; k++) 
     for (j=k+1; j<N; j++) {
       T = M[k*N+j];
       M[k*N+j] = M[j*N+k];
@@ -189,53 +128,43 @@ void mat_transpose (double *M, int N)
 //////// MAIN ////////////
 int main (int argc, char **argv)
 {
-  int N=2000,ok=0;
-  int N_pad,padding;
-  double *A, *B, *C, *X, *Y, R; 
+  int N=2000;
+  double *A, *B, *C, *X, *Y, R;
 
   if (argc>1) {  N  = atoll(argv[1]); }
   if (N<1 || N>20000) {
      printf("input parameter: N (1-20000)\n");
      return 0;
   }
-  
-  padding = (N % SM != 0) ? SM - (N % SM) : 0;
-  N_pad = N + padding;
-  printf ("Padded value: %d\n",N_pad);
 
-  // Dynamic allocation of 2-D matrices (aligned)
-  ok += posix_memalign((void**)&A,64,N_pad*N_pad*sizeof(double));
-  ok += posix_memalign((void**)&B,64,N_pad*N_pad*sizeof(double));
-  ok += posix_memalign((void**)&C,64,N_pad*N_pad*sizeof(double));
+  // dynamic allocation of 2-D matrices
+  A = (double *) malloc ( N*N*sizeof(double));
+  B = (double *) malloc ( N*N*sizeof(double));
+  C = (double *) malloc ( N*N*sizeof(double));
+
+  // Dynamic allocation of vectors
+  X = (double *) malloc ( N*sizeof(double));
+  Y = (double *) malloc ( N*sizeof(double));
   
-  // Dynamic allocation of vectors (aligned)
-  ok += posix_memalign((void**)&X,64,N_pad*sizeof(double));
-  ok += posix_memalign((void**)&Y,64,N_pad*sizeof(double));
-  
-  if (ok > 0)
-  {
-    printf("posix memalign failed: %d\n",ok);
-    exit(1);
-  }
   // initial seed for random generation
   srand(1);
 
   // Initialize input data with random data
-  init_vect (X, N, padding); //Init the first N elements only
-  init_vect (Y, N, padding); //Init the first N elements only
+  init_vect (X, N);
+  init_vect (Y, N);
   R=0.0;
 
   // Main computation
-  f1_mat        (X, Y, A, N_pad);
-  f2_mat        (X, Y, B, N_pad);
-  R +=          checksum_vect (Y, N_pad);
-  f1_vect       (X, R, N_pad);
-  R +=          checksum_vect (X, N_pad);
+  f1_mat        (X, Y, A, N);
+  f2_mat        (X, Y, B, N);
+  R +=          checksum_vect (Y, N);
+  f1_vect       (X, R, N);
+  R +=          checksum_vect (X, N);
   zero_mat      (C, N);
-  mult_mat      (A, B, C, N_pad);
-  mat_transpose (B, N_pad);
-  mult_mat      (B, A, C, N_pad); 
-  R +=          checksum_mat(C, N_pad);
+  mult_mat      (A, B, C, N);
+  mat_transpose (B, N);
+  mult_mat      (B, A, C, N); 
+  R +=          checksum_mat(C, N);
 
   // Output a single value
   printf("Final Result  (N= %d ) = %e\n", N, R);
